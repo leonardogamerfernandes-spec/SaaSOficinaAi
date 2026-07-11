@@ -1,0 +1,146 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  cnpj      String   @unique
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  customers     Customer[]
+  vehicles      Vehicle[]
+  serviceOrders ServiceOrder[]
+  appointments  Appointment[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   // "ADMIN", "MANAGER", "MECHANIC"
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  serviceOrders  ServiceOrder[]
+  chatSessions   AIChatSession[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  email     String?
+  phone     String
+  cpfCnpj   String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicles      Vehicle[]
+  serviceOrders ServiceOrder[]
+  appointments  Appointment[]
+}
+
+model Vehicle {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  plate      String   @unique
+  brand      String
+  model      String
+  year       Int
+  color      String?
+  vin        String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  serviceOrders ServiceOrder[]
+  appointments  Appointment[]
+}
+
+model ServiceOrder {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id])
+  vehicleId    String
+  vehicle      Vehicle  @relation(fields: [vehicleId], references: [id])
+  createdById  String
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  status       String   // "DRAFT_BUDGET", "BUDGET_APPROVED", "IN_PROGRESS", "COMPLETED", "CANCELLED"
+  discount     Float    @default(0.0)
+  totalPrice   Float    @default(0.0)
+  notes        String?
+  aiDiagnostic String?
+  approvedAt   DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items        ServiceItem[]
+}
+
+model ServiceItem {
+  id             String       @id @default(uuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  description    String
+  quantity       Float
+  unitPrice      Float
+  totalPrice     Float
+  type           String       // "PART", "LABOR"
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Appointment {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  vehicleId     String
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
+  scheduledTime DateTime
+  notes         String?
+  status        String   // "SCHEDULED", "CHECKED_IN", "CANCELLED"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AIChatSession {
+  id        String          @id @default(uuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  title     String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  messages  AIChatMessage[]
+}
+
+model AIChatMessage {
+  id        String        @id @default(uuid())
+  sessionId String
+  session   AIChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String        // "user", "model"
+  content   String
+  createdAt DateTime      @default(now())
+}
