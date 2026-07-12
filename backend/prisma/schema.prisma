@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -30,7 +30,7 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
-  role         String   // "ADMIN", "MANAGER", "MECHANIC"
+  role         String
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -85,7 +85,7 @@ model ServiceOrder {
   vehicle      Vehicle  @relation(fields: [vehicleId], references: [id])
   createdById  String
   createdBy    User     @relation(fields: [createdById], references: [id])
-  status       String   // "DRAFT_BUDGET", "BUDGET_APPROVED", "IN_PROGRESS", "COMPLETED", "CANCELLED"
+  status       String
   discount     Float    @default(0.0)
   totalPrice   Float    @default(0.0)
   notes        String?
@@ -106,7 +106,7 @@ model ServiceItem {
   quantity       Float
   unitPrice      Float
   totalPrice     Float
-  type           String       // "PART", "LABOR"
+  type           String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }
@@ -121,7 +121,7 @@ model Appointment {
   vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
   scheduledTime DateTime
   notes         String?
-  status        String   // "SCHEDULED", "CHECKED_IN", "CANCELLED"
+  status        String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -140,7 +140,7 @@ model AIChatMessage {
   id        String        @id @default(uuid())
   sessionId String
   session   AIChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  role      String        // "user", "model"
+  role      String
   content   String
   createdAt DateTime      @default(now())
 }

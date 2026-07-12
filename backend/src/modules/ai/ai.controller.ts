@@ -1,13 +1,13 @@
 import { Response } from "express";
 import { prisma } from "../../shared/prisma";
 import { AuthenticatedRequest } from "../../shared/auth";
-import { GoogleGenAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const geminiKey = process.env.GEMINI_API_KEY;
 let ai: any = null;
 if (geminiKey) {
   try {
-    ai = new GoogleGenAI({ apiKey: geminiKey });
+    ai = new GoogleGenerativeAI(geminiKey);
   } catch (err) {
     console.error("Gemini failed in chat controller setup:", err);
   }

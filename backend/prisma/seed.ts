@@ -1,16 +1,11 @@
 import { PrismaClient } from "@prisma/client";
-import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
 
 async function main() {
   console.log("Seeding database...");
 
-  // Clean old records
   await prisma.aIChatMessage.deleteMany();
   await prisma.aIChatSession.deleteMany();
   await prisma.serviceItem.deleteMany();
@@ -21,7 +16,6 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
 
-  // 1. Create Tenant
   const tenant = await prisma.tenant.create({
     data: {
       name: "Oficina do Zeca",
@@ -31,18 +25,17 @@ async function main() {
     },
   });
 
-  // 2. Create Admin User
+  const passwordHash = await bcrypt.hash("123456", 10);
   const admin = await prisma.user.create({
     data: {
       tenantId: tenant.id,
       name: "Zeca Silva",
       email: "zeca@oficina.com",
-      passwordHash: hashPassword("123456"), // Default password: 123456
+      passwordHash,
       role: "ADMIN",
     },
   });
 
-  // 3. Create Customers
   const customer1 = await prisma.customer.create({
     data: {
       tenantId: tenant.id,
@@ -65,7 +58,6 @@ async function main() {
     },
   });
 
-  // 4. Create Vehicles
   const vehicle1 = await prisma.vehicle.create({
     data: {
       tenantId: tenant.id,
@@ -91,8 +83,6 @@ async function main() {
     },
   });
 
-  // 5. Create Service Orders
-  // Order 1: Completed
   const order1 = await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
@@ -117,42 +107,13 @@ O ruído ao frear indica desgaste das pastilhas de freio dianteiras.
 
   await prisma.serviceItem.createMany({
     data: [
-      {
-        serviceOrderId: order1.id,
-        description: "Pastilhas de freio dianteiras (Cobreq)",
-        quantity: 1,
-        unitPrice: 120.00,
-        totalPrice: 120.00,
-        type: "PART",
-      },
-      {
-        serviceOrderId: order1.id,
-        description: "Óleo 5W30 Sintético Shell Helix (Litro)",
-        quantity: 4,
-        unitPrice: 45.00,
-        totalPrice: 180.00,
-        type: "PART",
-      },
-      {
-        serviceOrderId: order1.id,
-        description: "Filtro de óleo Fram",
-        quantity: 1,
-        unitPrice: 30.00,
-        totalPrice: 30.00,
-        type: "PART",
-      },
-      {
-        serviceOrderId: order1.id,
-        description: "Mão de obra troca de óleo e pastilhas",
-        quantity: 1,
-        unitPrice: 150.00,
-        totalPrice: 150.00,
-        type: "LABOR",
-      },
+      { serviceOrderId: order1.id, description: "Pastilhas de freio dianteiras (Cobreq)", quantity: 1, unitPrice: 120.00, totalPrice: 120.00, type: "PART" },
+      { serviceOrderId: order1.id, description: "Óleo 5W30 Sintético Shell Helix (Litro)", quantity: 4, unitPrice: 45.00, totalPrice: 180.00, type: "PART" },
+      { serviceOrderId: order1.id, description: "Filtro de óleo Fram", quantity: 1, unitPrice: 30.00, totalPrice: 30.00, type: "PART" },
+      { serviceOrderId: order1.id, description: "Mão de obra troca de óleo e pastilhas", quantity: 1, unitPrice: 150.00, totalPrice: 150.00, type: "LABOR" },
     ],
   });
 
-  // Order 2: In Progress
   const order2 = await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
@@ -175,26 +136,11 @@ Barulho do tipo "toc-toc" seco na suspensão indica provável desgaste das bucha
 
   await prisma.serviceItem.createMany({
     data: [
-      {
-        serviceOrderId: order2.id,
-        description: "Bieletas dianteiras Axios (Par)",
-        quantity: 1,
-        unitPrice: 110.00,
-        totalPrice: 110.00,
-        type: "PART",
-      },
-      {
-        serviceOrderId: order2.id,
-        description: "Mão de obra suspensão e alinhamento",
-        quantity: 1,
-        unitPrice: 240.00,
-        totalPrice: 240.00,
-        type: "LABOR",
-      },
+      { serviceOrderId: order2.id, description: "Bieletas dianteiras Axios (Par)", quantity: 1, unitPrice: 110.00, totalPrice: 110.00, type: "PART" },
+      { serviceOrderId: order2.id, description: "Mão de obra suspensão e alinhamento", quantity: 1, unitPrice: 240.00, totalPrice: 240.00, type: "LABOR" },
     ],
   });
 
-  // Order 3: Draft Budget
   await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
@@ -207,7 +153,6 @@ Barulho do tipo "toc-toc" seco na suspensão indica provável desgaste das bucha
     },
   });
 
-  // 6. Create appointments
   await prisma.appointment.create({
     data: {
       tenantId: tenant.id,
@@ -219,25 +164,14 @@ Barulho do tipo "toc-toc" seco na suspensão indica provável desgaste das bucha
     },
   });
 
-  // 7. Create AI Chat Session
   const chatSession = await prisma.aIChatSession.create({
-    data: {
-      userId: admin.id,
-      title: "Torque do cabeçote do Onix",
-    },
+    data: { userId: admin.id, title: "Torque do cabeçote do Onix" },
   });
 
   await prisma.aIChatMessage.createMany({
     data: [
-      {
-        sessionId: chatSession.id,
-        role: "user",
-        content: "Qual é o torque dos parafusos do cabeçote do Chevrolet Onix 1.0 Turbo?",
-      },
-      {
-        sessionId: chatSession.id,
-        role: "model",
-        content: `### Torque de Aperto do Cabeçote - Chevrolet Onix 1.0 Turbo (CSS Prime)
+      { sessionId: chatSession.id, role: "user", content: "Qual é o torque dos parafusos do cabeçote do Chevrolet Onix 1.0 Turbo?" },
+      { sessionId: chatSession.id, role: "model", content: `### Torque de Aperto do Cabeçote - Chevrolet Onix 1.0 Turbo (CSS Prime)
 
 O aperto dos parafusos deve seguir uma ordem espiral interna e ser realizado nas seguintes etapas:
 
@@ -246,12 +180,13 @@ O aperto dos parafusos deve seguir uma ordem espiral interna e ser realizado nas
 3. **Etapa 3:** Angular de 90°
 4. **Etapa 4:** Angular de mais 15°
 
-*Nota: Use parafusos novos, limpe as galerias de óleo e aplique o torque na ordem recomendada para evitar danos permanentes ao bloco de alumínio.*`,
-      },
+*Nota: Use parafusos novos, limpe as galerias de óleo e aplique o torque na ordem recomendada para evitar danos permanentes ao bloco de alumínio.*` },
     ],
   });
 
   console.log("Database seeded successfully!");
+  console.log(`  Tenant: Oficina do Zeca (CNPJ: 12.345.678/0001-99)`);
+  console.log(`  Admin: zeca@oficina.com / 123456`);
 }
 
 main()

@@ -1,14 +1,14 @@
 import { Response } from "express";
 import { prisma } from "../../shared/prisma";
 import { AuthenticatedRequest } from "../../shared/auth";
-import { GoogleGenAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Initialize Gemini API if key is available
 const geminiKey = process.env.GEMINI_API_KEY;
 let ai: any = null;
 if (geminiKey) {
   try {
-    ai = new GoogleGenAI({ apiKey: geminiKey });
+    ai = new GoogleGenerativeAI(geminiKey);
   } catch (err) {
     console.error("Failed to initialize Gemini API Client:", err);
   }

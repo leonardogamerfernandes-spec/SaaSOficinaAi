@@ -1,13 +1,10 @@
-import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../../shared/prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "oficinaai-super-secret-key-12345";
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
+const SALT_ROUNDS = 10;
 
 export async function register(req: Request, res: Response) {
   try {
@@ -27,48 +24,29 @@ export async function register(req: Request, res: Response) {
       return res.status(400).json({ error: "Email already registered" });
     }
 
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
     const result = await prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
-        data: {
-          name: tenantName,
-          cnpj,
-          phone,
-          address,
-        },
+        data: { name: tenantName, cnpj, phone, address },
       });
 
       const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          passwordHash: hashPassword(password),
-          role: "ADMIN",
-          tenantId: tenant.id,
-        },
+        data: { name, email, passwordHash, role: "ADMIN", tenantId: tenant.id },
       });
 
       return { tenant, user };
     });
 
     const token = jwt.sign(
-      {
-        id: result.user.id,
-        email: result.user.email,
-        role: result.user.role,
-        tenantId: result.tenant.id,
-      },
+      { id: result.user.id, email: result.user.email, role: result.user.role, tenantId: result.tenant.id },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     return res.status(201).json({
       token,
-      user: {
-        id: result.user.id,
-        name: result.user.name,
-        email: result.user.email,
-        role: result.user.role,
-      },
+      user: { id: result.user.id, name: result.user.name, email: result.user.email, role: result.user.role },
       tenant: result.tenant,
     });
   } catch (error: any) {
@@ -89,29 +67,28 @@ export async function login(req: Request, res: Response) {
       include: { tenant: true },
     });
 
-    if (!user || user.passwordHash !== hashPassword(password)) {
+    if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    const passwordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordValid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    if (!user.active) {
+      return res.status(403).json({ error: "Account deactivated" });
+    }
+
     const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        tenantId: user.tenantId,
-      },
+      { id: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     return res.json({
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
       tenant: user.tenant,
     });
   } catch (error: any) {
