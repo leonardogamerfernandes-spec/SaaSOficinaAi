@@ -234,7 +234,7 @@ Escreva uma resposta clara, objetiva e estruturada em português. Adicione uma i
 ### Diagnóstico Técnico Provável
 ### Lista de Peças e Mão de Obra Recomendadas`;
 
-        const result = await model.generateContent({ contents: [{ parts: [{ text: prompt }] }] });
+        const result = await model.generateContent(prompt);
         diagnosticResponse = result.response.text();
       } catch (geminiError) {
         console.error("Gemini API call failed, using mock:", geminiError);

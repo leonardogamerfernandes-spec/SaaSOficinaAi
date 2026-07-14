@@ -118,7 +118,7 @@ export async function sendMessage(req: AuthenticatedRequest, res: Response) {
         
         prompt += "Assistente:";
 
-        const result = await model.generateContent({ contents: [{ parts: [{ text: prompt }] }] });
+        const result = await model.generateContent(prompt);
         assistantResponse = result.response.text();
       } catch (geminiError) {
         console.error("Gemini Chat failed, using mock:", geminiError);
@@ -249,7 +249,7 @@ Dê uma estimativa realista em horas.
 ### Dicas Técnicas de Montagem
 Cuidados e torques específicos de montagem importantes para o veículo.`;
 
-        const result = await model.generateContent({ contents: [{ parts: [{ text: prompt }] }] });
+        const result = await model.generateContent(prompt);
         responseText = result.response.text();
       } catch (geminiError) {
         console.error("Gemini Parts Finder failed, using mock:", geminiError);
