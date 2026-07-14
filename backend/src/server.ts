@@ -12,15 +12,26 @@ import vehicleRoutes from "./modules/vehicles/vehicles.routes";
 import serviceOrderRoutes from "./modules/service-orders/service-orders.routes";
 import aiRoutes from "./modules/ai/ai.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import appointmentRoutes from "./modules/appointments/appointments.routes";
+import planRoutes from "./modules/plans/plans.routes";
+import inspectionRoutes from "./modules/inspections/inspections.routes";
+import reportsRoutes from "./modules/reports/reports.routes";
+import inventoryRoutes from "./modules/inventory/inventory.routes";
+import reminderRoutes from "./modules/reminders/reminders.routes";
+import warrantyRoutes from "./modules/warranties/warranties.routes";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const corsOrigin = process.env.CORS_ORIGIN || "*";
-app.use(cors({
-  origin: corsOrigin === "*" ? "*" : corsOrigin.split(",").map(s => s.trim()),
+// CORS configuration — credentials requires explicit origin, not wildcard
+const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:3000";
+const corsOptions: cors.CorsOptions = {
   credentials: true,
-}));
+  origin: corsOrigin === "*"
+    ? true // `true` reflects the request origin, compatible with credentials
+    : corsOrigin.split(",").map(s => s.trim()),
+};
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: "10mb" }));
 
@@ -48,6 +59,13 @@ app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/service-orders", serviceOrderRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/plans", planRoutes);
+app.use("/api/inspections", inspectionRoutes);
+app.use("/api/reports", reportsRoutes);
+app.use("/api/inventory", inventoryRoutes);
+app.use("/api/reminders", reminderRoutes);
+app.use("/api/warranties", warrantyRoutes);
 
 const server = app.listen(PORT, () => {
   console.log(`[OficinaAI Backend] running on http://localhost:${PORT}`);

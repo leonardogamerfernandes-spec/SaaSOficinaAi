@@ -117,3 +117,40 @@ export async function deleteVehicle(req: AuthenticatedRequest, res: Response) {
     return res.status(500).json({ error: error.message });
   }
 }
+
+export async function getVehicleHistory(req: AuthenticatedRequest, res: Response) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context missing" });
+
+    const { id } = req.params;
+
+    const vehicle = await prisma.vehicle.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({ error: "Veículo não encontrado" });
+    }
+
+    const serviceOrders = await prisma.serviceOrder.findMany({
+      where: { vehicleId: id, tenantId },
+      include: {
+        items: true,
+        createdBy: {
+          select: { name: true },
+        },
+        inspection: true,
+        warranty: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({
+      vehicle,
+      history: serviceOrders,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}

@@ -1,9 +1,8 @@
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
 import { prisma } from "../../shared/prisma";
+import { signToken } from "../../shared/auth";
 
-const JWT_SECRET = process.env.JWT_SECRET || "oficinaai-super-secret-key-12345";
 const SALT_ROUNDS = 10;
 
 export async function register(req: Request, res: Response) {
@@ -38,11 +37,12 @@ export async function register(req: Request, res: Response) {
       return { tenant, user };
     });
 
-    const token = jwt.sign(
-      { id: result.user.id, email: result.user.email, role: result.user.role, tenantId: result.tenant.id },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = signToken({
+      id: result.user.id,
+      email: result.user.email,
+      role: result.user.role,
+      tenantId: result.tenant.id,
+    });
 
     return res.status(201).json({
       token,
@@ -80,11 +80,12 @@ export async function login(req: Request, res: Response) {
       return res.status(403).json({ error: "Account deactivated" });
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = signToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId,
+    });
 
     return res.json({
       token,

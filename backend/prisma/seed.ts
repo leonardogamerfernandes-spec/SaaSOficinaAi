@@ -4,8 +4,13 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding database...");
+  console.log("Seeding database with OficinaAI SaaS content...");
 
+  // Clean DB
+  await prisma.inspectionChecklist.deleteMany();
+  await prisma.inventoryItem.deleteMany();
+  await prisma.serviceWarranty.deleteMany();
+  await prisma.serviceReminder.deleteMany();
   await prisma.aIChatMessage.deleteMany();
   await prisma.aIChatSession.deleteMany();
   await prisma.serviceItem.deleteMany();
@@ -16,12 +21,15 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
 
+  // Create Tenant (PRO plan by default for full experience)
   const tenant = await prisma.tenant.create({
     data: {
       name: "Oficina do Zeca",
       cnpj: "12.345.678/0001-99",
       phone: "(11) 98765-4321",
       address: "Rua das Oficinas, 123 - São Paulo, SP",
+      plan: "PRO",
+      maxUsers: 3,
     },
   });
 
@@ -58,6 +66,7 @@ async function main() {
     },
   });
 
+  // Vehicles with new fields
   const vehicle1 = await prisma.vehicle.create({
     data: {
       tenantId: tenant.id,
@@ -68,6 +77,8 @@ async function main() {
       year: 2021,
       color: "Branco",
       vin: "9BWZZZ5UG123456",
+      mileage: 45200,
+      engineInfo: "1.6 16V MSI Flex",
     },
   });
 
@@ -80,9 +91,12 @@ async function main() {
       model: "Onix 1.0 Turbo",
       year: 2022,
       color: "Preto",
+      mileage: 28500,
+      engineInfo: "1.0 12V Ecotec Turbo",
     },
   });
 
+  // Service Order 1 (Completed)
   const order1 = await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
@@ -114,6 +128,39 @@ O ruído ao frear indica desgaste das pastilhas de freio dianteiras.
     ],
   });
 
+  // Checklist for Order 1
+  await prisma.inspectionChecklist.create({
+    data: {
+      serviceOrderId: order1.id,
+      headlightsOk: true,
+      taillightsOk: true,
+      tiresOk: false, // worn out tires
+      brakesOk: false, // bad brakes
+      fluidsOk: false, // low oil
+      batteryOk: true,
+      suspensionOk: true,
+      exhaustOk: true,
+      acOk: true,
+      wiperOk: true,
+      mirrorsOk: true,
+      bodyDamageNotes: "Risco leve na porta traseira direita",
+      mileage: 45200,
+      fuelLevel: "HALF",
+      notes: "Carro limpo. Banco de couro bem conservado.",
+    },
+  });
+
+  // Warranty for Order 1
+  await prisma.serviceWarranty.create({
+    data: {
+      serviceOrderId: order1.id,
+      warrantyDays: 90,
+      expiresAt: new Date(Date.now() + 88 * 24 * 60 * 60 * 1000),
+      notes: "Garantia de 90 dias para as pastilhas e serviços efetuados.",
+    },
+  });
+
+  // Service Order 2 (In Progress)
   const order2 = await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
@@ -141,6 +188,26 @@ Barulho do tipo "toc-toc" seco na suspensão indica provável desgaste das bucha
     ],
   });
 
+  await prisma.inspectionChecklist.create({
+    data: {
+      serviceOrderId: order2.id,
+      headlightsOk: true,
+      taillightsOk: true,
+      tiresOk: true,
+      brakesOk: true,
+      fluidsOk: true,
+      batteryOk: true,
+      suspensionOk: false, // bad suspension noise
+      exhaustOk: true,
+      acOk: true,
+      wiperOk: true,
+      mirrorsOk: true,
+      mileage: 28500,
+      fuelLevel: "THREE_QUARTER",
+    },
+  });
+
+  // Service Order 3 (Draft)
   await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
@@ -153,6 +220,43 @@ Barulho do tipo "toc-toc" seco na suspensão indica provável desgaste das bucha
     },
   });
 
+  // Inventory Items (Pro feature)
+  await prisma.inventoryItem.createMany({
+    data: [
+      { tenantId: tenant.id, name: "Óleo 5W30 Sintético Shell Helix", brand: "Shell", quantity: 24, minQuantity: 10, unitCost: 32.00, unitPrice: 48.00, category: "LUBRICATION", location: "Prateleira A-1" },
+      { tenantId: tenant.id, name: "Pastilha de Freio Cobreq Gol G5/G6", brand: "Cobreq", quantity: 4, minQuantity: 3, unitCost: 75.00, unitPrice: 120.00, category: "BRAKE", location: "Prateleira B-4" },
+      { tenantId: tenant.id, name: "Filtro de Óleo Fram Gol/Voyage", brand: "Fram", quantity: 12, minQuantity: 5, unitCost: 15.00, unitPrice: 28.00, category: "FILTERS", location: "Prateleira A-3" },
+      { tenantId: tenant.id, name: "Amortecedor Dianteiro Onix Monroe", brand: "Monroe", quantity: 2, minQuantity: 2, unitCost: 280.00, unitPrice: 420.00, category: "SUSPENSION", location: "Corredor C" },
+      { tenantId: tenant.id, name: "Bieleta Estabilizadora Axios Onix", brand: "Axios", quantity: 1, minQuantity: 4, unitCost: 35.00, unitPrice: 65.00, category: "SUSPENSION", location: "Prateleira B-2" }, // Low stock!
+    ],
+  });
+
+  // Service Reminders (Pro feature)
+  await prisma.serviceReminder.createMany({
+    data: [
+      {
+        tenantId: tenant.id,
+        customerId: customer1.id,
+        vehicleId: vehicle1.id,
+        type: "OIL_CHANGE",
+        description: "Revisão e próxima troca de óleo de 10.000 km recomendada",
+        dueDateKm: 55200,
+        dueDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+        status: "PENDING",
+      },
+      {
+        tenantId: tenant.id,
+        customerId: customer2.id,
+        vehicleId: vehicle2.id,
+        type: "REVISION",
+        description: "Revisão preventiva periódica anual",
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        status: "PENDING",
+      },
+    ],
+  });
+
+  // Appointments
   await prisma.appointment.create({
     data: {
       tenantId: tenant.id,
@@ -184,8 +288,8 @@ O aperto dos parafusos deve seguir uma ordem espiral interna e ser realizado nas
     ],
   });
 
-  console.log("Database seeded successfully!");
-  console.log(`  Tenant: Oficina do Zeca (CNPJ: 12.345.678/0001-99)`);
+  console.log("Database seeded successfully with plans and modules!");
+  console.log(`  Tenant: Oficina do Zeca (CNPJ: 12.345.678/0001-99) - Plan: PRO`);
   console.log(`  Admin: zeca@oficina.com / 123456`);
 }
 

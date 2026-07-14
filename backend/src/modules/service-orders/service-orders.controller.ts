@@ -1,18 +1,7 @@
 import { Response } from "express";
 import { prisma } from "../../shared/prisma";
 import { AuthenticatedRequest } from "../../shared/auth";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-// Initialize Gemini API if key is available
-const geminiKey = process.env.GEMINI_API_KEY;
-let ai: any = null;
-if (geminiKey) {
-  try {
-    ai = new GoogleGenerativeAI(geminiKey);
-  } catch (err) {
-    console.error("Failed to initialize Gemini API Client:", err);
-  }
-}
+import { getGeminiModel } from "../../shared/ai";
 
 export async function listServiceOrders(req: AuthenticatedRequest, res: Response) {
   try {
@@ -229,9 +218,10 @@ export async function aiAnalyzeServiceOrder(req: AuthenticatedRequest, res: Resp
 
     let diagnosticResponse = "";
 
-    if (ai) {
+    const model = getGeminiModel();
+
+    if (model) {
       try {
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
         const prompt = `Você é um mecânico especialista de IA na plataforma OficinaAI.
 Sua tarefa é analisar os sintomas relatados de um veículo e fornecer:
 1. Um diagnóstico técnico provável da falha.

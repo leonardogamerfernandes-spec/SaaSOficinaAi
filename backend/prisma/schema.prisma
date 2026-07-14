@@ -7,20 +7,29 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  cnpj      String   @unique
-  phone     String?
-  address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ============================================================
+// CORE MODELS
+// ============================================================
 
-  users         User[]
-  customers     Customer[]
-  vehicles      Vehicle[]
-  serviceOrders ServiceOrder[]
-  appointments  Appointment[]
+model Tenant {
+  id            String    @id @default(uuid())
+  name          String
+  cnpj          String    @unique
+  phone         String?
+  address       String?
+  plan          String    @default("FREE") // FREE | PRO | ENTERPRISE
+  planExpiresAt DateTime?
+  maxUsers      Int       @default(1)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  users          User[]
+  customers      Customer[]
+  vehicles       Vehicle[]
+  serviceOrders  ServiceOrder[]
+  appointments   Appointment[]
+  inventoryItems InventoryItem[]
+  reminders      ServiceReminder[]
 }
 
 model User {
@@ -30,7 +39,7 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
-  role         String
+  role         String   // ADMIN | MANAGER | MECHANIC | RECEPTIONIST
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -38,6 +47,10 @@ model User {
   serviceOrders  ServiceOrder[]
   chatSessions   AIChatSession[]
 }
+
+// ============================================================
+// CUSTOMER & VEHICLE
+// ============================================================
 
 model Customer {
   id        String   @id @default(uuid())
@@ -54,6 +67,7 @@ model Customer {
   vehicles      Vehicle[]
   serviceOrders ServiceOrder[]
   appointments  Appointment[]
+  reminders     ServiceReminder[]
 }
 
 model Vehicle {
@@ -68,12 +82,19 @@ model Vehicle {
   year       Int
   color      String?
   vin        String?
+  mileage    Int?     // Quilometragem atual
+  engineInfo String?  // Ex: "1.0 12V Flex", "1.6 MSI"
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   serviceOrders ServiceOrder[]
   appointments  Appointment[]
+  reminders     ServiceReminder[]
 }
+
+// ============================================================
+// SERVICE ORDERS & ITEMS
+// ============================================================
 
 model ServiceOrder {
   id           String   @id @default(uuid())
@@ -85,7 +106,7 @@ model ServiceOrder {
   vehicle      Vehicle  @relation(fields: [vehicleId], references: [id])
   createdById  String
   createdBy    User     @relation(fields: [createdById], references: [id])
-  status       String
+  status       String   // DRAFT_BUDGET | BUDGET_APPROVED | IN_PROGRESS | COMPLETED | CANCELLED
   discount     Float    @default(0.0)
   totalPrice   Float    @default(0.0)
   notes        String?
@@ -95,7 +116,9 @@ model ServiceOrder {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  items        ServiceItem[]
+  items      ServiceItem[]
+  inspection InspectionChecklist?
+  warranty   ServiceWarranty?
 }
 
 model ServiceItem {
@@ -106,10 +129,96 @@ model ServiceItem {
   quantity       Float
   unitPrice      Float
   totalPrice     Float
-  type           String
+  type           String       // PART | LABOR
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }
+
+// ============================================================
+// INSPECTION CHECKLIST (Plano Básico+)
+// ============================================================
+
+model InspectionChecklist {
+  id              String       @id @default(uuid())
+  serviceOrderId  String       @unique
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  headlightsOk    Boolean      @default(false)
+  taillightsOk    Boolean      @default(false)
+  tiresOk         Boolean      @default(false)
+  brakesOk        Boolean      @default(false)
+  fluidsOk        Boolean      @default(false)
+  batteryOk       Boolean      @default(false)
+  suspensionOk    Boolean      @default(false)
+  exhaustOk       Boolean      @default(false)
+  acOk            Boolean      @default(false)
+  wiperOk         Boolean      @default(false)
+  mirrorsOk       Boolean      @default(false)
+  bodyDamageNotes String?
+  mileage         Int?
+  fuelLevel       String?      // EMPTY | QUARTER | HALF | THREE_QUARTER | FULL
+  notes           String?
+  createdAt       DateTime     @default(now())
+}
+
+// ============================================================
+// INVENTORY (Plano Pro+)
+// ============================================================
+
+model InventoryItem {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  partNumber  String?
+  brand       String?
+  quantity    Int      @default(0)
+  minQuantity Int      @default(5)
+  unitCost    Float    @default(0)
+  unitPrice   Float    @default(0)
+  category    String?  // BRAKE | ENGINE | SUSPENSION | ELECTRICAL | FILTERS | LUBRICATION | OTHER
+  location    String?  // Prateleira/gaveta
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================================
+// WARRANTY (Plano Pro+)
+// ============================================================
+
+model ServiceWarranty {
+  id             String       @id @default(uuid())
+  serviceOrderId String       @unique
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  warrantyDays   Int          @default(90)
+  expiresAt      DateTime
+  notes          String?
+  createdAt      DateTime     @default(now())
+}
+
+// ============================================================
+// REMINDERS (Plano Pro+)
+// ============================================================
+
+model ServiceReminder {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  vehicleId   String
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  type        String   // OIL_CHANGE | REVISION | TIMING_BELT | BRAKE_CHECK | TIRE_ROTATION | CUSTOM
+  description String
+  dueDateKm   Int?
+  dueDate     DateTime?
+  status      String   @default("PENDING") // PENDING | SENT | COMPLETED | DISMISSED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================================
+// APPOINTMENTS
+// ============================================================
 
 model Appointment {
   id            String   @id @default(uuid())
@@ -121,10 +230,14 @@ model Appointment {
   vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
   scheduledTime DateTime
   notes         String?
-  status        String
+  status        String   // SCHEDULED | CONFIRMED | CANCELLED | COMPLETED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+// ============================================================
+// AI CHAT
+// ============================================================
 
 model AIChatSession {
   id        String          @id @default(uuid())
