@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { prisma } from "../../shared/prisma";
 import { AuthenticatedRequest } from "../../shared/auth";
+import { sanitizeError } from "../../shared/errorHandler";
 
 export async function getPlanStatus(req: AuthenticatedRequest, res: Response) {
   try {
@@ -50,7 +51,7 @@ export async function getPlanStatus(req: AuthenticatedRequest, res: Response) {
       },
     });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: sanitizeError(error) });
   }
 }
 
@@ -82,6 +83,6 @@ export async function updatePlan(req: AuthenticatedRequest, res: Response) {
       maxUsers: updated.maxUsers,
     });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: sanitizeError(error) });
   }
 }

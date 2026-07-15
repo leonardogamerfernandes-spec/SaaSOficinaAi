@@ -19,7 +19,7 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export function signToken(payload: { id: string; email: string; role: string; tenantId: string }): string {
-  return jwt.sign(payload, getJwtSecret(), { expiresIn: "7d" });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: "1d" });
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {

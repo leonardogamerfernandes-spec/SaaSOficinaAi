@@ -17,12 +17,14 @@ export default function UpgradeModal({ isOpen, onClose, requiredPlan, onUpgradeS
   async function handleUpgrade() {
     setLoading(true);
     try {
-      await api.plans.update(requiredPlan);
-      alert(`Parabéns! Sua oficina foi atualizada para o plano ${requiredPlan}!`);
-      onUpgradeSuccess();
-      onClose();
+      const res = await api.payments.checkout(requiredPlan);
+      if (res.init_point) {
+        window.location.href = res.init_point;
+      } else {
+        throw new Error("Ponto de entrada do pagamento não encontrado.");
+      }
     } catch (err: any) {
-      alert("Erro ao simular upgrade: " + err.message);
+      alert("Erro ao iniciar pagamento: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ export default function UpgradeModal({ isOpen, onClose, requiredPlan, onUpgradeS
           disabled={loading}
           className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-2.5 rounded-lg text-sm transition shadow-lg shadow-indigo-500/20 disabled:opacity-50"
         >
-          {loading ? "Processando..." : `Simular Upgrade para o plano ${requiredPlan}`}
+          {loading ? "Processando..." : `Assinar Plano ${requiredPlan}`}
         </button>
         <button onClick={onClose} className="text-xs text-zinc-500 hover:text-zinc-400 font-medium">
           Talvez mais tarde

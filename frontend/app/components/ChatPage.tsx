@@ -40,43 +40,73 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col border border-zinc-800 bg-zinc-900/10 rounded-xl h-[600px] overflow-hidden">
-      <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-900/40 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></div>
-          <span className="text-sm font-semibold text-white">Canal de Ajuda Mecânica - IA OficinaAI</span>
+    <div className="flex flex-col border border-zinc-900 bg-zinc-900/10 backdrop-blur-sm rounded-2xl h-[600px] overflow-hidden">
+      <div className="px-6 py-4.5 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span className="text-xs font-bold text-white uppercase tracking-wider">Canal de Ajuda Mecânica - Assistente IA</span>
         </div>
-        <span className="text-xs text-zinc-500">Gemini 1.5 Flash</span>
+        <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-widest">Gemini 1.5 Flash</span>
       </div>
-      <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4 bg-zinc-950/20">
+
+      <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5 bg-zinc-950/20">
         {chatMessages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-600">
-            <div className="h-12 w-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-4">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="h-14 w-14 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/15 flex items-center justify-center text-2xl mb-4 shadow-lg shadow-indigo-500/5 animate-pulse">
+              🤖
             </div>
-            <p className="text-sm font-semibold">Assistente Técnico de IA</p>
-            <p className="text-xs mt-1">Pergunte sobre torque, diagnóstico de falhas, lubrificantes e mais.</p>
+            <p className="text-xs font-black text-white uppercase tracking-wider">Assistente Técnico de IA</p>
+            <p className="text-[11px] text-zinc-500 mt-1 max-w-xs leading-relaxed">
+              Pergunte sobre especificações de torque, diagnóstico de códigos de falha, capacidades de lubrificantes e esquemas elétricos.
+            </p>
           </div>
         )}
-        {chatMessages.map(msg => (
-          <div key={msg.id} className={`flex flex-col max-w-[80%] ${msg.role === "user" ? "self-end items-end" : "self-start items-start"}`}>
-            <div className={`p-4 rounded-xl text-sm leading-6 whitespace-pre-wrap ${msg.role === "user" ? "bg-indigo-600 text-white rounded-br-none" : "bg-zinc-900 text-zinc-200 border border-zinc-800 rounded-bl-none"}`}>{msg.content}</div>
-            <span className="text-[10px] text-zinc-600 mt-1 font-semibold capitalize">{msg.role === "user" ? "Mecânico (Você)" : "IA Assistente"}</span>
-          </div>
-        ))}
+
+        {chatMessages.map(msg => {
+          const isUser = msg.role === "user";
+          return (
+            <div key={msg.id} className={`flex flex-col max-w-[85%] ${isUser ? "self-end items-end" : "self-start items-start"}`}>
+              <div 
+                className={`px-4.5 py-3 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap border ${
+                  isUser 
+                    ? "bg-gradient-to-tr from-indigo-600 to-violet-600 text-white rounded-tr-none border-indigo-600/30 shadow-md shadow-indigo-600/10" 
+                    : "bg-zinc-900/80 text-zinc-200 border-zinc-800/80 rounded-tl-none"
+                }`}
+              >
+                {msg.content}
+              </div>
+              <span className="text-[9px] text-zinc-500 mt-1.5 font-bold uppercase tracking-wider">
+                {isUser ? "Você" : "Assistente OficinaAI"}
+              </span>
+            </div>
+          );
+        })}
+
         {isTyping && (
-          <div className="self-start flex flex-col items-start gap-1">
-            <div className="bg-zinc-900 border border-zinc-800 text-zinc-400 px-4 py-3 rounded-xl text-xs rounded-bl-none flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-zinc-500 animate-bounce"></div>
-              <div className="h-1.5 w-1.5 rounded-full bg-zinc-500 animate-bounce delay-75"></div>
-              <div className="h-1.5 w-1.5 rounded-full bg-zinc-500 animate-bounce delay-150"></div>
+          <div className="self-start flex flex-col items-start gap-1.5">
+            <div className="bg-zinc-900/80 border border-zinc-800/80 text-zinc-400 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-500 animate-bounce" style={{ animationDelay: "0ms" }}></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-500 animate-bounce" style={{ animationDelay: "150ms" }}></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-500 animate-bounce" style={{ animationDelay: "300ms" }}></span>
             </div>
           </div>
         )}
       </div>
-      <form onSubmit={handleSendChatMessage} className="p-4 border-t border-zinc-800 bg-zinc-900/20 flex gap-3">
-        <input type="text" placeholder="Pergunte sobre torque, diagnóstico de injeção, óleo..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500" />
-        <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-md shadow-indigo-600/10">Enviar</button>
+
+      <form onSubmit={handleSendChatMessage} className="p-4 border-t border-zinc-900 bg-zinc-900/15 flex gap-3 relative z-10">
+        <input 
+          type="text" 
+          placeholder="Pergunte sobre torque, diagnóstico de injeção, óleo..." 
+          value={chatInput} 
+          onChange={(e) => setChatInput(e.target.value)} 
+          className="flex-1 bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50 transition-all duration-200" 
+        />
+        <button 
+          type="submit" 
+          className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-600/10"
+        >
+          Enviar
+        </button>
       </form>
     </div>
   );

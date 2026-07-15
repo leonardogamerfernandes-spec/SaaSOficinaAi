@@ -263,6 +263,14 @@ export const api = {
       }),
   },
 
+  payments: {
+    checkout: (plan: "PRO" | "ENTERPRISE") =>
+      request<{ id: string; init_point: string }>("/api/payments/checkout", {
+        method: "POST",
+        body: JSON.stringify({ plan }),
+      }),
+  },
+
   customers: {
     list: () => request<Customer[]>("/api/customers"),
     create: (data: { name: string; email?: string; phone: string; cpfCnpj?: string; address?: string }) =>

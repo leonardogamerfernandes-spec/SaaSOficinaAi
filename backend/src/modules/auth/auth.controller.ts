@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import { prisma } from "../../shared/prisma";
 import { signToken } from "../../shared/auth";
+import { sanitizeError } from "../../shared/errorHandler";
 
 const SALT_ROUNDS = 10;
 
@@ -50,7 +51,7 @@ export async function register(req: Request, res: Response) {
       tenant: result.tenant,
     });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: sanitizeError(error) });
   }
 }
 
@@ -93,6 +94,6 @@ export async function login(req: Request, res: Response) {
       tenant: user.tenant,
     });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: sanitizeError(error) });
   }
 }
